@@ -24,7 +24,12 @@
 #define YES 1
 #define NO 0
 
+#ifdef __WIN32__
+/* On Windows, erl doesn't correctly load the LFE REPL; werl does. */
+#define DEFAULT_PROGNAME "werl"
+#else
 #define DEFAULT_PROGNAME "erl"
+#endif
 
 static char **Eargv = NULL;	/* Argument array for erl call */
 static int Eargc = 0;		/* Argument count */
