@@ -53,6 +53,7 @@ $(BINDIR)/%: $(CSRCDIR)/%.c
 	gcc -o $@ $<
 
 $(EBINDIR)/%.beam: $(SRCDIR)/%.erl
+	if not exist $(EBINDIR) mkdir $(EBINDIR)
 	$(ERLC) -I $(INCDIR) -o $(EBINDIR) $(MAPS_OPTS) $(ERLCFLAGS) $<
 
 %.erl: %.xrl
@@ -78,7 +79,7 @@ erlc-compile: $(addprefix $(EBINDIR)/, $(EBINS)) $(addprefix $(BINDIR)/, $(BINS)
 lfec-compile: $(addprefix $(EBINDIR)/, $(LBINS))
 
 $(EBINDIR)/$(APP_DEF): $(SRCDIR)/$(APP_DEF).src
-	cp $(SRCDIR)/$(APP_DEF).src $(EBINDIR)/$(APP_DEF)
+	copy $(SRCDIR)\$(APP_DEF).src $(EBINDIR)\$(APP_DEF)
 
 erlc-lfec: erlc-compile lfec-compile $(EBINDIR)/$(APP_DEF)
 
