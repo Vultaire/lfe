@@ -7,4 +7,4 @@ REM directory.
 
 SET LFE_ROOTDIR=%~dp0..
 
-lfeexec
+%~dp0lfeexec
