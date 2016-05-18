@@ -126,8 +126,6 @@ IF NOT EXIST "%EBINDIR%" (
 
 FOR %%F in ("%SRCDIR%\*.erl") DO (
     IF NOT EXIST %EBINDIR%\%%~nF.beam (
-        REM Weirdness: if these 2 lines are removed, this breaks on my
-        REM machine, saying it can't find the FORCE_ECHO label.
         CALL :FORCE_ECHO %ERLC% -I %INCDIR% -o %EBINDIR% %MAPS_OPTS% %ERLCFLAGS% %%F
         IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
     )
