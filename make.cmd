@@ -108,8 +108,7 @@ EXIT /B 0
 
 :GET_MAPS_OPTS
 IF NOT EXIST maps_opts.mk (
-    ECHO Creating maps_opts.mk
-    escript get_maps_opts.escript
+    CALL :FORCE_ECHO escript get_maps_opts.escript
     IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
 )
 REM Format of maps_opt.mk is: key = value
@@ -122,12 +121,13 @@ EXIT /B 0
 
 :COMPILE_BEAM_FILES
 IF NOT EXIST "%EBINDIR%" (
-    ECHO Creating ebin directory
-    MKDIR "%EBINDIR%"
+    CALL :FORCE_ECHO MKDIR "%EBINDIR%"
 )
 
 FOR %%F in ("%SRCDIR%\*.erl") DO (
     IF NOT EXIST %EBINDIR%\%%~nF.beam (
+        REM Weirdness: if these 2 lines are removed, this breaks on my
+        REM machine, saying it can't find the FORCE_ECHO label.
         CALL :FORCE_ECHO %ERLC% -I %INCDIR% -o %EBINDIR% %MAPS_OPTS% %ERLCFLAGS% %%F
         IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
     )
