@@ -22,9 +22,12 @@ REM tools such as Make on Windows.
 SETLOCAL EnableDelayedExpansion
 SET "SRCDIR=src"
 SET "INCDIR=include"
+SET "BINDIR=bin"
 SET "EBINDIR=ebin"
 SET "ERLC=erlc"
 SET "ERLCFLAGS=-W1"
+SET "LFEC=%BINDIR%\lfe %BINDIR%\lfec"
+SET "LFECFLAGS=-pa ../lfe"
 SET "APP_DEF=lfe.app"
 
 CALL :MAIN %*
@@ -103,12 +106,18 @@ EXIT /B 0
 :COMPILE
 CALL :GET_MAPS_OPTS
 IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
-CALL :COMPILE_BEAM_FILES
+CALL :COMPILE_XRL_TO_ERL
+IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
+CALL :COMPILE_ERL_FILES
 IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
 IF NOT EXIST "%EBINDIR%\%APP_DEF%" (
     CALL :FORCE_ECHO COPY /Y "%SRCDIR%\%APP_DEF%.src" "%EBINDIR%\%APP_DEF%"
     IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
 )
+CALL :COMPILE_LFE_FILES
+IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
+CALL :CLEANUP_INTERMEDIATE_FILES
+IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
 EXIT /B 0
 
 
@@ -125,7 +134,17 @@ FOR /F "tokens=1,3*" %%A in (maps_opts.mk) DO (
 EXIT /B 0
 
 
-:COMPILE_BEAM_FILES
+:COMPILE_XRL_TO_ERL
+FOR %%F in ("%SRCDIR%\*.xrl") DO (
+    IF NOT EXIST %SRCDIR%\%%~nF.erl (
+        CALL :FORCE_ECHO %ERLC% -o %SRCDIR% %%F
+        IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
+    )
+)
+EXIT /B 0
+
+
+:COMPILE_ERL_FILES
 IF NOT EXIST "%EBINDIR%" (
     CALL :FORCE_ECHO MKDIR "%EBINDIR%"
 )
@@ -139,9 +158,32 @@ FOR %%F in ("%SRCDIR%\*.erl") DO (
 EXIT /B 0
 
 
+:COMPILE_LFE_FILES
+FOR %%F in ("%SRCDIR%\*.lfe") DO (
+    IF NOT EXIST %EBINDIR%\%%~nF.beam (
+        CALL :FORCE_ECHO %LFEC% -I %INCDIR% -o %EBINDIR% %LFECFLAGS% %%F
+        IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
+    )
+)
+EXIT /B 0
+
+
+:CLEANUP_INTERMEDIATE_FILES
+REM Remove .erl files generated from .xrl files
+FOR %%F in ("%SRCDIR%\*.xrl") DO (
+    IF EXIST %SRCDIR%\%%~nF.erl (
+        CALL :FORCE_ECHO DEL %SRCDIR%\%%~nF.erl
+        IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
+    )
+)
+EXIT /B 0
+
+
 :FORCE_ECHO
 ECHO %*
-%*
+REM For some reason, when calling werl, this seems to fail critically
+REM if I simply call via "%*".  Via CMD /C, it seems to run.
+CMD /C %*
 EXIT /B !ERRORLEVEL!
 
 
