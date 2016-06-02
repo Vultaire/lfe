@@ -23,7 +23,6 @@ SETLOCAL EnableDelayedExpansion
 SET LFE_PROGNAME=%~nx0
 SET LFE_BINDIR=%~dp0
 SET LFE_ROOTDIR=%~dp0..
-SET ERL=erl
 
 CALL :MAIN %*
 IF !ERRORLEVEL! NEQ 0 GOTO :ERROR
@@ -35,15 +34,24 @@ GOTO :SUCCESS
 
 :MAIN
 SET CMDLINE=
-CALL :ADD_ARG %ERL%
-CALL :ADD_ARG -pa
-CALL :ADD_ARG %LFE_ROOTDIR%\ebin
+SET NOSHELL=
 
 CALL :PARSE_ARGS %*
 IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
 
 CALL :FIND_ALL_LIBS
 IF !ERRORLEVEL! NEQ 0 EXIT /B !ERRORLEVEL!
+
+REM Due to inconsistencies between erl.exe and werl.exe, launch
+REM werl.exe if a shell is needed, and erl.exe otherwise.  I'm not
+REM sure this will satisfy all cases, but it sounds like a good
+REM heuristic to start with.
+IF "%NOSHELL%"=="true" (
+    SET ERL=erl
+) ELSE (
+    SET ERL=werl
+)
+SET CMDLINE=%ERL% -pa %LFE_ROOTDIR%\ebin %CMDLINE%
 
 ECHO Using libs: %ALL_LIBS%
 ECHO Command line: %CMDLINE%
@@ -123,6 +131,7 @@ GOTO :PARSE_ARGS_MAIN_LOOP
 :PARSE_ARGS_MAIN_LOOP_DONE
 
 IF NOT "%1"=="" (
+    SET NOSHELL=true
     CALL :ADD_ARG -noshell
 )
 CALL :ADD_ARG -user
